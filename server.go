@@ -42,13 +42,19 @@ func (s *Server) Start() {
 
 func handleConn(c net.Conn) {
 	log.Printf("[%s] Client connected.\n", c.RemoteAddr())
-	reader := bufio.NewReader(c)
+	reader := bufio.NewScanner(c)
 	fmt.Fprint(c, "200 - READY\n")
 	var msg string
 	for {
-		b, _, _ := reader.ReadLine()
+		if !reader.Scan() {
+			continue
+		}
+
+		b := reader.Text()
+
 		msg = string(b)
-		fmt.Print(msg)
+		fmt.Println(msg)
+
 		if strings.HasPrefix(msg, "USER") {
 			fmt.Fprint(c, "331 - Guest login ok, send your complete e-mail address as password.\n")
 		} else if strings.HasPrefix(msg, "PASS") {
