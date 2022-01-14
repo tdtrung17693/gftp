@@ -7,13 +7,23 @@ import (
 	"strings"
 )
 
-type Command interface {
-	Handle() Response
-}
-
-type CommandHandler struct {
+type ConnHandler struct {
 	conn    net.Conn
 	scanner bufio.Scanner
+}
+
+type ConnContext struct {
+	State   string
+	ResChan chan Response
+}
+
+type Command struct {
+	Name   string
+	Params []string
+}
+
+type CommandHandler interface {
+	Handle(cmd *Command, ctx *ConnContext) Response
 }
 
 type Response struct {
@@ -21,23 +31,25 @@ type Response struct {
 	message string
 }
 
-type Request struct {
-	command    string
-	parameters []string
-}
-
-func ParseRequest(requestLine string) Request {
+func ParseCommand(requestLine string) *Command {
 	components := strings.Split(requestLine, " ")
-        fmt.Print(components[0])
-        return Request{}
 
+	var params []string
+	if len(components) > 1 {
+		params = components[1:]
+	}
+
+	return &Command{
+		Name:   components[0],
+		Params: params,
+	}
 }
 
-func NewCommandHandler(conn net.Conn) *CommandHandler {
+func NewConnHandler(conn net.Conn) *ConnHandler {
 	s := *bufio.NewScanner(conn)
 	// s.Split(bufio.ScanWords)
 
-	c := &CommandHandler{
+	c := &ConnHandler{
 		conn:    conn,
 		scanner: s,
 	}
@@ -45,29 +57,14 @@ func NewCommandHandler(conn net.Conn) *CommandHandler {
 	return c
 }
 
-func (handler *CommandHandler) getCurrentCommand() *Command {
-	var c interface{}
-	msg := handler.scanner.Text()
-	switch msg {
-	case "USER":
-		c = &userCommand{}
-	case "PASS":
-		c = &passCommand{}
-	case "FEAT":
-		c = &featCommand{}
-	default:
-		c = &unknownCommand{}
-	}
-
-	return c.(*Command)
-}
-
-func (handler *CommandHandler) Handle() bool {
+func (handler *ConnHandler) Handle() bool {
 	if handler.scanner.Scan() {
 		return false
 	}
 
-	// cmd := handler.getCurrentCommand()
+	cmd := ParseCommand(handler.scanner.Text())
+
+	fmt.Println(cmd)
 
 	return true
 }
