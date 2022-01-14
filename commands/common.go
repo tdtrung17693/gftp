@@ -22,10 +22,6 @@ type Command struct {
 	Params []string
 }
 
-type CommandHandler interface {
-	Handle(cmd *Command, ctx *ConnContext) Response
-}
-
 type Response struct {
 	code    int
 	message string

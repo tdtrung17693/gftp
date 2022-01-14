@@ -8,8 +8,6 @@ type CommandHandler interface {
 	Handle(cmd *Command, ctx *ConnContext) Response
 }
 
-type cmdBuilder (func() interface{})
-
 var cmdHandlerMap map[string](*CommandHandler)
 
 func init() {
