@@ -1,13 +1,16 @@
 package handlers
 
 import (
-	. "gftp/commands"
+	"gftp/commands"
+	"gftp/server"
 )
 
 type passCmdHandler struct {
-	command Command
 }
 
-func (h *passCmdHandler) Handle(cmd *Command, ctx *ConnContext) *Response {
-
+func (h passCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
+	return &server.Response{
+		Code:    server.ReplyUserLoggedIn,
+		Message: "Ready",
+	}
 }

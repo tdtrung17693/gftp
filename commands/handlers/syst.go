@@ -1,13 +1,16 @@
 package handlers
 
 import (
-	. "gftp/commands"
+	"gftp/commands"
+	"gftp/server"
 )
 
 type systCmdHandler struct {
-	command Command
 }
 
-func (h *systCmdHandler) Handle(cmd *Command, ctx *ConnContext) *Response {
-
+func (h systCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
+	return &server.Response{
+		Code:    server.ReplySystemStatus,
+		Message: "UNIX",
+	}
 }

@@ -5,10 +5,10 @@ import (
 	"gftp/server"
 )
 
-type featCmdHandler struct {
+type unknownCmdHandler struct {
 }
 
-func (h featCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
+func (h unknownCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
 	return &server.Response{
 		Code:    server.ReplyCommandNotImplemented,
 		Message: "Command not implemented",

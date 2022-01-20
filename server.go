@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"gftp/commands"
+	"gftp/commands/handlers"
+	"gftp/server"
 	"log"
 	"net"
-	"strings"
 )
 
 type Server struct {
@@ -29,6 +30,9 @@ func (s *Server) Start() {
 		log.Fatal(err)
 	}
 
+	dtp := server.NewDTP()
+
+	fmt.Printf("Listening on %d...\n", s.port)
 	for {
 		conn, err := listener.Accept()
 
@@ -36,44 +40,15 @@ func (s *Server) Start() {
 			log.Println(err)
 			continue
 		}
-		go handleConn(conn)
+
+		go handleConn(conn, dtp)
 	}
 }
 
-func handleConn(c net.Conn) {
+func handleConn(c net.Conn, dtp *server.Dtp) {
 	log.Printf("[%s] Client connected.\n", c.RemoteAddr())
-	reader := bufio.NewScanner(c)
-	fmt.Fprint(c, "200 - READY\n")
-	var msg string
-	for {
-		if !reader.Scan() {
-			continue
-		}
-
-		b := reader.Text()
-
-		msg = string(b)
-		fmt.Println(msg)
-
-		if strings.HasPrefix(msg, "USER") {
-			fmt.Fprint(c, "331 - Guest login ok, send your complete e-mail address as password.\n")
-		} else if strings.HasPrefix(msg, "PASS") {
-			fmt.Fprint(c, "230 - Greeting\n")
-		} else if strings.HasPrefix(msg, "SYST") {
-			fmt.Fprint(c, `
-215 UNIX Type: L8
-Remote system type is UNIX.
-Using binary mode to transfer files.
-			`)
-		} else if strings.HasPrefix(msg, "PWD") {
-			fmt.Fprint(c, "257 \"/usr/home/ixl\" is cwd.\n")
-		} else if strings.HasPrefix(msg, "TYPE") {
-			fmt.Fprint(c, "200 OK\n")
-		} else if strings.HasPrefix(msg, "PASV") {
-			fmt.Fprint(c, "227 Entering Passive Mode\n")
-		} else if strings.HasPrefix(msg, "PORT") {
-			fmt.Fprint(c, "200 OK\n")
-		}
-
-	}
+	var resolver = handlers.CommandResolver{}
+	var cmdProcessor = commands.NewCommandProcessor(resolver)
+	handler := server.NewConnHandler(c, dtp, cmdProcessor)
+	handler.Handle()
 }
