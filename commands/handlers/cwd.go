@@ -6,10 +6,10 @@ import (
 	"log"
 )
 
-type listCmdHandler struct {
+type cwdCmdHandler struct {
 }
 
-func (h listCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
+func (h cwdCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
 	currentDtpConn := ctx.DtpConn
 
 	currentDtpConn.MsgChan <- server.DtpListRequest{

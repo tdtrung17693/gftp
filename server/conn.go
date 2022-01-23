@@ -13,24 +13,10 @@ type ConnHandler struct {
 	Context          ConnContext
 }
 
-type ConnContext struct {
-	State       string
-	ResChan     chan Response
-	Dtp         *Dtp
-	ConnDtpChan chan interface{}
-	Pwd         string
-	UserRoot    string
-}
-
 func NewConnHandler(conn net.Conn, dtp *Dtp, commandProcessor CommandProcessor) *ConnHandler {
 	s := bufio.NewScanner(conn)
 
-	context := ConnContext{
-		State:       "",
-		ResChan:     make(chan Response),
-		Dtp:         dtp,
-		ConnDtpChan: nil,
-	}
+	context := NewConnContext(dtp)
 
 	c := &ConnHandler{
 		Conn:             conn,
@@ -56,8 +42,7 @@ func (h *ConnHandler) Handle() bool {
 
 		res := h.commandProcessor.Handle(scanner.Text(), &h.Context)
 
-		h.Conn.Write([]byte(fmt.Sprintf("%d: %s\n", res.Code, res.Message)))
-
+		fmt.Fprintf(h.Conn, "%d: %s\n", res.Code, res.Message)
 	}
 
 	return true

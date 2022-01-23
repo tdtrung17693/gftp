@@ -13,6 +13,7 @@ func init() {
 	cmdHandlerMap["syst"] = newCommandHandler(&systCmdHandler{})
 	cmdHandlerMap["pasv"] = newCommandHandler(&pasvCmdHandler{})
 	cmdHandlerMap["pwd"] = newCommandHandler(&pwdCmdHandler{})
+	cmdHandlerMap["cwd"] = newCommandHandler(&cwdCmdHandler{})
 	cmdHandlerMap["type"] = newCommandHandler(&typeCmdHandler{})
 	cmdHandlerMap["list"] = newCommandHandler(&listCmdHandler{})
 	cmdHandlerMap["unknown"] = newCommandHandler(&unknownCmdHandler{})

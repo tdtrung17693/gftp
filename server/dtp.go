@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os/exec"
@@ -14,6 +13,11 @@ type Dtp struct {
 	ErrorChan    chan error
 }
 
+type DtpConn struct {
+	MsgChan chan interface{}
+	ErrChan chan error
+}
+
 type DtpOpenConnRequest struct {
 	TransferType string
 	ResponseChan chan interface{}
@@ -22,6 +26,7 @@ type DtpOpenConnRequest struct {
 type DtpResponse struct {
 	Port   int
 	MsgBus chan interface{}
+	ErrBus chan error
 }
 
 type DtpListRequest struct {
@@ -94,6 +99,7 @@ func startDTPConnection() (*DtpResponse, error) {
 	dtpResponse := DtpResponse{
 		Port:   port,
 		MsgBus: dtpConnChan,
+		ErrBus: errConnChan,
 	}
 
 	return &dtpResponse, nil
@@ -103,34 +109,36 @@ func dtpListener(l net.Listener, dtpChan chan interface{}, errChan chan error) {
 	// only 1 client for 1 server dtp,
 	// so just need 1 goroutine to handle
 	defer l.Close()
-	for {
-		conn, err := l.Accept()
+	conn, err := l.Accept()
 
+	if err != nil {
+		fmt.Println(err)
+		errChan <- err
+		return
+	}
+
+	fmt.Printf("[DTP] [%s] Client connected.\n", conn.RemoteAddr())
+	cmd := <-dtpChan
+	switch a := cmd.(type) {
+	case DtpListRequest:
+		fmt.Printf("[DTP] [%s] LIST command received.\n", conn.RemoteAddr())
+		res, err := exec.Command("ls", "-ll").Output()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
+			errChan <- err
+			return
+		}
+		_, err = fmt.Fprint(conn, string(res))
+		if err != nil {
+			fmt.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
 			errChan <- err
 			return
 		}
 
-		fmt.Printf("[DTP] [%s] Client connected.\n", conn.RemoteAddr())
-		select {
-		case cmd := <-dtpChan:
-			switch a := cmd.(type) {
-			case DtpListRequest:
-				writer := bufio.NewWriter(conn)
-				fmt.Printf("[DTP] [%s] LIST command received.\n", conn.RemoteAddr())
-				res, err := exec.Command("ls", "-l").Output()
-				if err != nil {
-					fmt.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
-					continue
-				}
-				fmt.Print(string(res))
-				writer.Write(res)
-				conn.Close()
-			default:
-				fmt.Print(a, conn)
-			}
-		}
-
+		conn.Close()
+		dtpChan <- DtpResponse{}
+		fmt.Printf("[DTP] [%s] Finish LIST\n", conn.RemoteAddr())
+	default:
+		fmt.Print(a, conn)
 	}
 }

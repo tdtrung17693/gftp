@@ -21,7 +21,10 @@ func (h pasvCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 	case res := <-resChan:
 		switch v := res.(type) {
 		case *server.DtpResponse:
-			ctx.ConnDtpChan = v.MsgBus
+			ctx.DtpConn = &server.DtpConn{
+                          MsgChan: v.MsgBus,
+                          ErrChan: v.ErrBus,
+                        }
 			port = v.Port
 		case error:
 			return &server.Response{
