@@ -4,6 +4,7 @@ import (
 	"gftp/commands"
 	"gftp/server"
 	"log"
+	"path"
 )
 
 type listCmdHandler struct {
@@ -11,9 +12,11 @@ type listCmdHandler struct {
 
 func (h listCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
 	currentDtpConn := ctx.DtpConn
+	realPath := path.Join(ctx.ServerRoot, ctx.Pwd)
+	log.Println(realPath)
 
 	currentDtpConn.MsgChan <- server.DtpListRequest{
-		Path: ctx.Pwd,
+		Path: realPath,
 	}
 
 	select {

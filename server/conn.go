@@ -16,7 +16,7 @@ type ConnHandler struct {
 func NewConnHandler(conn net.Conn, dtp *Dtp, commandProcessor CommandProcessor) *ConnHandler {
 	s := bufio.NewScanner(conn)
 
-	context := NewConnContext(dtp)
+	context := NewConnContext(dtp, "/media/Data1/Code/gftp-working-dir")
 
 	c := &ConnHandler{
 		Conn:             conn,

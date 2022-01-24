@@ -122,7 +122,9 @@ func dtpListener(l net.Listener, dtpChan chan interface{}, errChan chan error) {
 	switch a := cmd.(type) {
 	case DtpListRequest:
 		fmt.Printf("[DTP] [%s] LIST command received.\n", conn.RemoteAddr())
-		res, err := exec.Command("ls", "-ll").Output()
+		cmd := exec.Command("ls", "-ll")
+		cmd.Dir = a.Path
+		res, err := cmd.Output()
 		if err != nil {
 			fmt.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
 			errChan <- err

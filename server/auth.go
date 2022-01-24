@@ -1,10 +1,30 @@
 package server
 
+type User struct {
+	Username string
+	Email    string
+	Password string
+	RootPath string
+}
 type UserProvider interface {
-	GetUser(username string)
-	Exists(username string)
+	GetUser(username string) (*User, error)
+	Exists(username string) (bool, error)
 }
 
-type Auth interface {
-	Verify(username string, password string)
+type AuthService interface {
+	Verify(username string, password string) (bool, error)
+}
+
+type auth struct {
+	UserProvider UserProvider
+	AuthService  AuthService
+}
+
+var DefaultAuth *auth
+
+func InitAuth(userProvider UserProvider, authService AuthService) {
+	DefaultAuth = &auth{
+		UserProvider: userProvider,
+		AuthService:  authService,
+	}
 }
