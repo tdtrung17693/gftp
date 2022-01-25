@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gftp/commands"
 	"gftp/server"
+	"log"
 )
 
 type pasvCmdHandler struct {
@@ -22,9 +23,9 @@ func (h pasvCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 		switch v := res.(type) {
 		case *server.DtpResponse:
 			ctx.DtpConn = &server.DtpConn{
-                          MsgChan: v.MsgBus,
-                          ErrChan: v.ErrBus,
-                        }
+				MsgChan: v.MsgBus,
+				ErrChan: v.ErrBus,
+			}
 			port = v.Port
 		case error:
 			return &server.Response{
@@ -37,7 +38,7 @@ func (h pasvCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 	}
 	p1 := port >> 8
 	p2 := port & 0xFF
-	fmt.Printf("DTP Port: %d\n", port)
+	log.Printf("DTP Port: %d\n", port)
 	return &server.Response{
 		Code:    server.ReplyPassiveMode,
 		Message: fmt.Sprintf("127,0,0,1,%d,%d", p1, p2),

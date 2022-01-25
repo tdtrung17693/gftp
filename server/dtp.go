@@ -2,7 +2,9 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -35,10 +37,17 @@ type DtpListRequest struct {
 }
 
 type DtpTransferRequest struct {
-	FileName     string
-	TransferMode string
+	FilePath     string
+	TransferMode int
 	TransferType int
 }
+
+const (
+	TransferTypeASCII = iota
+	TransferTypeEBCDIC
+	TransferTypeImage
+	TransferTypeLocal
+)
 
 const (
 	TransferModeStore = iota
@@ -121,26 +130,41 @@ func dtpListener(l net.Listener, dtpChan chan interface{}, errChan chan error) {
 	cmd := <-dtpChan
 	switch a := cmd.(type) {
 	case DtpListRequest:
-		fmt.Printf("[DTP] [%s] LIST command received.\n", conn.RemoteAddr())
+		log.Printf("[DTP] [%s] LIST command received.\n", conn.RemoteAddr())
 		cmd := exec.Command("ls", "-ll")
 		cmd.Dir = a.Path
 		res, err := cmd.Output()
 		if err != nil {
-			fmt.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
+			log.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
 			errChan <- err
 			return
 		}
 		_, err = fmt.Fprint(conn, string(res))
 		if err != nil {
-			fmt.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
+			log.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
 			errChan <- err
 			return
 		}
 
 		conn.Close()
 		dtpChan <- DtpResponse{}
-		fmt.Printf("[DTP] [%s] Finish LIST\n", conn.RemoteAddr())
-	default:
-		fmt.Print(a, conn)
+		log.Printf("[DTP] [%s] Finish LIST\n", conn.RemoteAddr())
+	case DtpTransferRequest:
+		log.Printf("[DTP] [%s] RETR command received.\n", conn.RemoteAddr())
+		file, err := os.ReadFile(a.FilePath)
+		if err != nil {
+			log.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
+		}
+
+		_, err = fmt.Fprint(conn, string(file))
+		if err != nil {
+			log.Printf("[DTP] [%s] Error: %s", conn.RemoteAddr(), err)
+			errChan <- err
+			return
+		}
+
+		conn.Close()
+		dtpChan <- DtpResponse{}
+		log.Printf("[DTP] [%s] Finish RETR\n", conn.RemoteAddr())
 	}
 }
