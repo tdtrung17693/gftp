@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -13,36 +14,45 @@ type ConnHandler struct {
 	Context          ConnContext
 }
 
-func NewConnHandler(conn net.Conn, dtp *Dtp, commandProcessor CommandProcessor) *ConnHandler {
+func NewConnHandler(conn net.Conn, connContext ConnContext, commandProcessor CommandProcessor) *ConnHandler {
 	s := bufio.NewScanner(conn)
-
-	context := NewConnContext(dtp, "/media/Data1/Code/gftp-working-dir")
 
 	c := &ConnHandler{
 		Conn:             conn,
 		Scanner:          s,
-		Context:          context,
+		Context:          connContext,
 		commandProcessor: commandProcessor,
 	}
 
 	return c
 }
 
+func (h *ConnHandler) logf(p string, args ...interface{}) {
+	log.Printf(
+		fmt.Sprintf("[interpreter] [%s] %s", h.Conn.RemoteAddr(), p),
+		args...)
+}
+
 func (h *ConnHandler) Handle() bool {
 	scanner := h.Scanner
 
-	fmt.Println("Handling connection...")
+	h.logf("Handling connection...")
 	fmt.Fprint(h.Conn, "200 - READY\n")
 	for {
 		if !scanner.Scan() {
-			fmt.Println("Error")
-			fmt.Print(scanner.Err())
+			err := scanner.Err()
+
+			if err != nil {
+				fmt.Println("Error")
+				fmt.Print(scanner.Err())
+			}
+
 			break
 		}
 
 		res := h.commandProcessor.Handle(scanner.Text(), &h.Context)
 
-		fmt.Fprintf(h.Conn, "%d: %s\n", res.Code, res.Message)
+		fmt.Fprintf(h.Conn, "%d %s\n", res.Code, res.Message)
 	}
 
 	return true

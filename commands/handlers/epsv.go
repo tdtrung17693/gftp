@@ -6,10 +6,10 @@ import (
 	"gftp/server"
 )
 
-type pasvCmdHandler struct {
+type epsvCmdHandler struct {
 }
 
-func (h pasvCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
+func (h epsvCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
 	dtpConn, err := ctx.Dtp.OpenNewConn(dtp.TransferModePassive)
 
 	if err != nil {
@@ -22,7 +22,7 @@ func (h pasvCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 	ctx.DtpConn = dtpConn
 
 	return &server.Response{
-		Code:    server.ReplyPassiveMode,
-		Message: dtpConn.GetPASVMsg(),
+		Code:    server.ReplyExtendedPassiveMode,
+		Message: dtpConn.GetEPSVMsg(),
 	}
 }

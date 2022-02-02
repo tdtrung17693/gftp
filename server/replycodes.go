@@ -16,6 +16,7 @@ const (
 	ReplyDataConnectionOpenNoTransfer = 225
 	ReplyClosingDataConnection        = 226
 	ReplyPassiveMode                  = 227
+	ReplyExtendedPassiveMode          = 229
 	ReplyUserLoggedIn                 = 230
 	ReplyRequestedFileOk              = 250
 	ReplyPathNameCreated              = 257

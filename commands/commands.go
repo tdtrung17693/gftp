@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -11,7 +10,6 @@ type Command struct {
 }
 
 func parseCommand(requestLine string) *Command {
-	fmt.Printf("Parsing command: %q\n", requestLine)
 	components := strings.Split(requestLine, " ")
 
 	var params []string

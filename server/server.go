@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"gftp/dtp"
 	"log"
 	"net"
 )
@@ -9,13 +10,15 @@ import (
 type Server struct {
 	port             int
 	host             string
+	dataRoot         string
 	commandProcessor CommandProcessor
 }
 
-func NewFTPServer(port int, host string, commandProcessor CommandProcessor) *Server {
+func NewFTPServer(port int, host string, dataRoot string, commandProcessor CommandProcessor) *Server {
 	c := &Server{
 		port:             port,
 		host:             host,
+		dataRoot:         dataRoot,
 		commandProcessor: commandProcessor,
 	}
 
@@ -29,7 +32,7 @@ func (s *Server) Start() {
 		log.Fatal(err)
 	}
 
-	dtp := NewDTP()
+	newDTP := dtp.NewDTP()
 
 	fmt.Printf("Listening on %d...\n", s.port)
 	for {
@@ -40,12 +43,12 @@ func (s *Server) Start() {
 			continue
 		}
 
-		go handleConn(conn, dtp, s.commandProcessor)
+		go s.handleConn(conn, newDTP, s.commandProcessor)
 	}
 }
 
-func handleConn(c net.Conn, dtp *Dtp, cmdProcessor CommandProcessor) {
-	log.Printf("[%s] Client connected.\n", c.RemoteAddr())
-	handler := NewConnHandler(c, dtp, cmdProcessor)
+func (s *Server) handleConn(c net.Conn, dtp *dtp.Dtp, cmdProcessor CommandProcessor) {
+	context := NewConnContext(dtp, s.dataRoot)
+	handler := NewConnHandler(c, context, cmdProcessor)
 	handler.Handle()
 }
