@@ -12,7 +12,7 @@ type listCmdHandler struct {
 
 func (h listCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
 	currentDtpConn := ctx.DtpConn
-	realPath := path.Join(ctx.ServerRoot, ctx.Pwd)
+	realPath := path.Join(ctx.ServerRoot, ctx.UserRoot, ctx.Pwd)
 
 	err := currentDtpConn.SendMessage(dtp.DtpListRequest{
 		Path: realPath,

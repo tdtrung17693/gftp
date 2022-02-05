@@ -31,7 +31,7 @@ func (h passCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 		}
 	}
 
-	user, err := server.DefaultAuth.UserProvider.GetUser(ctx.Username)
+	user, err := server.GetUser(ctx.Username)
 
 	if err != nil {
 		log.Print(err)
@@ -42,7 +42,7 @@ func (h passCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 	}
 
 	ctx.UserRoot = user.RootPath
-	ctx.Pwd = ctx.UserRoot
+	ctx.Pwd = "/"
 
 	return &server.Response{
 		Code:    server.ReplyUserLoggedIn,

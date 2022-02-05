@@ -1,11 +1,11 @@
 package dtp
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -45,11 +45,11 @@ func newDtpConn() (*DtpConn, error) {
 		errChan:     errConnChan,
 		tcpListener: listener,
 	}
+
 	return &dtpConn, nil
 }
 
 func (dtpConn *DtpConn) SendMessage(dtpCmd interface{}) error {
-	log.Println(dtpConn.msgChan)
 	dtpConn.msgChan <- dtpCmd
 
 	select {
@@ -70,54 +70,22 @@ func (dtpConn *DtpConn) serve() {
 		return
 	}
 
+	defer conn.Close()
+
 	dtpConn.tcpConn = conn
 
 	dtpConn.logf("Client connected.")
 	dtpConn.logf("Waiting for command...")
 	cmd := <-dtpConn.msgChan
 
-	switch a := cmd.(type) {
-	case DtpListRequest:
-		dtpConn.logf("LIST command received.\n")
-		cmd := exec.Command("ls", "-ll")
-		cmd.Dir = a.Path
-		res, err := cmd.Output()
+	requestHandler, err := getDtpRequestHandler(cmd)
 
-		if err != nil {
-			dtpConn.logf("Error: %s", err)
-			dtpConn.sendError(err)
-			return
-		}
-
-		err = dtpConn.write(res)
-
-		if err != nil {
-			dtpConn.logf("Error: %s", err)
-			dtpConn.sendError(err)
-			return
-		}
-
-		conn.Close()
-		dtpConn.msgChan <- dtpSuccessResponse{}
-
-		dtpConn.logf("Finish LIST")
-	case DtpTransferRequest:
-		dtpConn.logf("RETR command received")
-		file, err := os.ReadFile(a.FilePath)
-		if err != nil {
-			dtpConn.logf("Error: %s", err)
-		}
-
-		_, err = fmt.Fprint(conn, string(file))
-		if err != nil {
-			dtpConn.logf("Error: %s", err)
-			dtpConn.sendError(err)
-		}
-
-		conn.Close()
-		dtpConn.msgChan <- dtpSuccessResponse{}
-		dtpConn.logf("Finish RETR")
+	if err != nil {
+		dtpConn.logf("Error: %s", err)
+		dtpConn.sendError(err)
 	}
+
+	requestHandler.handle(dtpConn, cmd)
 }
 
 func (dtpConn *DtpConn) sendError(e error) {
@@ -139,6 +107,23 @@ func (dtpConn *DtpConn) write(d []byte) error {
 	_, err := fmt.Fprint(dtpConn.tcpConn, string(d))
 
 	return err
+}
+
+func (dtpConn *DtpConn) read() ([]byte, error) {
+	s := bufio.NewScanner(dtpConn.tcpConn)
+
+	eof := s.Scan()
+
+	err := s.Err()
+	if err != nil && err != io.EOF {
+		return nil, s.Err()
+	}
+
+	err = nil
+	if eof {
+		err = io.EOF
+	}
+	return s.Bytes(), err
 }
 
 func (dtpConn *DtpConn) logf(p string, args ...interface{}) {

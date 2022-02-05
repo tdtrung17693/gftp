@@ -48,7 +48,8 @@ func (s *Server) Start() {
 }
 
 func (s *Server) handleConn(c net.Conn, dtp *dtp.Dtp, cmdProcessor CommandProcessor) {
-	context := NewConnContext(dtp, s.dataRoot)
+	context := NewConnContext(c, dtp, s.dataRoot)
+
 	handler := NewConnHandler(c, context, cmdProcessor)
 	handler.Handle()
 }

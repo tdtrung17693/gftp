@@ -5,12 +5,13 @@ import (
 	"gftp/dtp"
 	"gftp/server"
 	"path"
+	"strings"
 )
 
-type retrCmdHandler struct {
+type storCmdHandler struct {
 }
 
-func (h retrCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
+func (h storCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *server.Response {
 	// Mark the transfer starting point
 	ctx.WriteResponse(&server.Response{
 		Code:    server.ReplyFileStatusOk,
@@ -18,8 +19,8 @@ func (h retrCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 	})
 
 	err := ctx.DtpConn.SendMessage(dtp.DtpTransferRequest{
-		FilePath:       path.Join(ctx.ServerRoot, ctx.Pwd, cmd.Params[0]),
-		TransferAction: dtp.TransferActionRetrieve,
+		FilePath:       path.Join(ctx.ServerRoot, ctx.UserRoot, ctx.Pwd, strings.Join(cmd.Params, " ")),
+		TransferAction: dtp.TransferActionStore,
 		TransferType:   ctx.DtpTransferType,
 	})
 
@@ -31,7 +32,7 @@ func (h retrCmdHandler) Handle(cmd *commands.Command, ctx *server.ConnContext) *
 	}
 
 	return &server.Response{
-		Code:    226,
+		Code:    server.ReplyClosingDataConnection,
 		Message: "OK",
 	}
 }

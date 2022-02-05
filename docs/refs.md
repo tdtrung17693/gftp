@@ -6,4 +6,4 @@
 - Extensions: https://www.rfc-editor.org/rfc/rfc3659
 - Command and Extension Registry: https://www.rfc-editor.org/rfc/rfc5797
 - Virtual Hosts: https://www.rfc-editor.org/rfc/rfc7151
-
+- List command response: http://cr.yp.to/ftp/list/binls.html, https://files.stairways.com/other/ftp-list-specs-info.txt

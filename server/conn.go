@@ -3,12 +3,10 @@ package server
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"net"
 )
 
 type ConnHandler struct {
-	Conn             net.Conn
 	commandProcessor CommandProcessor
 	Scanner          *bufio.Scanner
 	Context          ConnContext
@@ -18,7 +16,6 @@ func NewConnHandler(conn net.Conn, connContext ConnContext, commandProcessor Com
 	s := bufio.NewScanner(conn)
 
 	c := &ConnHandler{
-		Conn:             conn,
 		Scanner:          s,
 		Context:          connContext,
 		commandProcessor: commandProcessor,
@@ -28,16 +25,16 @@ func NewConnHandler(conn net.Conn, connContext ConnContext, commandProcessor Com
 }
 
 func (h *ConnHandler) logf(p string, args ...interface{}) {
-	log.Printf(
-		fmt.Sprintf("[interpreter] [%s] %s", h.Conn.RemoteAddr(), p),
-		args...)
+	h.Context.logf(
+		"%s", args...)
 }
 
 func (h *ConnHandler) Handle() bool {
 	scanner := h.Scanner
 
 	h.logf("Handling connection...")
-	fmt.Fprint(h.Conn, "200 - READY\n")
+	h.Context.WriteResponse(&Response{Code: ReplyCommandOk, Message: "READY"})
+
 	for {
 		if !scanner.Scan() {
 			err := scanner.Err()
@@ -52,7 +49,10 @@ func (h *ConnHandler) Handle() bool {
 
 		res := h.commandProcessor.Handle(scanner.Text(), &h.Context)
 
-		fmt.Fprintf(h.Conn, "%d %s\n", res.Code, res.Message)
+		// This line just handles the final stage of the command
+		// Some commands require several stages, hence its handler
+		// could also send response to the client
+		h.Context.WriteResponse(res)
 	}
 
 	return true

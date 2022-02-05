@@ -28,3 +28,7 @@ func InitAuth(userProvider UserProvider, authService AuthService) {
 		AuthService:  authService,
 	}
 }
+
+func GetUser(username string) (*User, error) {
+	return DefaultAuth.UserProvider.GetUser(username)
+}
